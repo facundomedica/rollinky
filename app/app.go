@@ -75,6 +75,12 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
+	"github.com/skip-mev/connect/v2/service/metrics"
+	_ "github.com/skip-mev/connect/v2/x/marketmap"
+	marketmapkeeper "github.com/skip-mev/connect/v2/x/marketmap/keeper"
+	_ "github.com/skip-mev/connect/v2/x/oracle"
+	oraclekeeper "github.com/skip-mev/connect/v2/x/oracle/keeper"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"rollinky/docs"
@@ -138,6 +144,10 @@ type App struct {
 	ScopedIBCTransferKeeper   capabilitykeeper.ScopedKeeper
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
+
+	// Skip Connect
+	OracleKeeper    *oraclekeeper.Keeper
+	MarketMapKeeper *marketmapkeeper.Keeper
 
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
@@ -277,6 +287,8 @@ func New(
 		&app.NFTKeeper,
 		&app.GroupKeeper,
 		&app.CircuitBreakerKeeper,
+		&app.MarketMapKeeper,
+		&app.OracleKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
@@ -316,10 +328,22 @@ func New(
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
+	rh := RollkitHandler{
+		logger:  app.Logger(),
+		metrics: metrics.NewNopMetrics(),
+		ok:      app.OracleKeeper,
+	}
+
+	app.App.SetPreBlocker(rh.PreBlocker(app.ModuleManager))
+
+	app.App.SetPrepareProposal(baseapp.NoOpPrepareProposal())
+
 	// Register legacy modules
 	if err := app.registerIBCModules(appOpts); err != nil {
 		return nil, err
 	}
+
+	app.MarketMapKeeper.SetHooks(app.OracleKeeper.Hooks())
 
 	// register streaming services
 	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {

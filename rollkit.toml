@@ -1,0 +1,4 @@
+entrypoint = "/Users/facundo/Documents/work/rollinky/cmd/rollinkyd/main.go"
+
+[chain]
+  config_dir = "/Users/facundo/.rollinky"

@@ -42,6 +42,21 @@ curl https://get.ignite.com/username/rollinky@latest! | sudo bash
 ```
 `username/rollinky` should match the `username` and `repo_name` of the Github repository to which the source code was pushed. Learn more about [the install process](https://github.com/allinbits/starport-installer).
 
+## Sequencer
+
+The sequencer is the centralized-sequencer with modifications to allow adding a Head and a Tail tx to the block. The sequencer is responsible of adding the prices to the block.
+
+## Skip Connect
+
+### Sidecar
+
+The sidecar is meant to be ran on an Intel SGX machine in an TEE, it uses a gRPC unary interceptor in order to create a report and send it to the client.
+
+### Oracle client
+
+This is a library, which contains modified code from Skip's oracle client, in order to make it possible to receive gRPC trailers that the sidecar populates with the verifiable report.
+
+
 ## Learn more
 
 - [Ignite CLI](https://ignite.com/cli)

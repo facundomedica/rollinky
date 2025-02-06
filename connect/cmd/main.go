@@ -23,8 +23,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 
+	protov1 "github.com/golang/protobuf/proto"
 	"github.com/skip-mev/connect/v2/cmd/build"
 	cmdconfig "github.com/skip-mev/connect/v2/cmd/connect/config"
 	"github.com/skip-mev/connect/v2/oracle"
@@ -469,8 +469,8 @@ func UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 		return resp, err
 	}
 
-	protoresp := resp.(proto.Message)
-	bz, err := proto.Marshal(protoresp)
+	protoresp := resp.(protov1.Message)
+	bz, err := protov1.Marshal(protoresp)
 	if err != nil {
 		return nil, err
 	}

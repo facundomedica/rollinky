@@ -12,7 +12,7 @@ build:
 
 # Sign the binary (depends on build).
 sign: build
-	ego sign ./build/connect
+	ego sign
 
 # Clean up build artifacts.
 clean:

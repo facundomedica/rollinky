@@ -97,7 +97,7 @@ func (h *RollkitHandler) PreBlocker(mm *module.Manager, signerID string) sdk.Pre
 			return response, err
 		}
 
-		if err := sequencerutils.VerifyReport(pricesBz, enclaveReport, signerIDBz); err != nil {
+		if err := sequencerutils.VerifyReport(enclaveReport, pricesBz, signerIDBz); err != nil {
 			h.logger.Error(
 				"failed to verify report",
 				"height", ctx.BlockHeight(),
@@ -107,7 +107,7 @@ func (h *RollkitHandler) PreBlocker(mm *module.Manager, signerID string) sdk.Pre
 		}
 
 		rawPrices := &types.QueryPricesResponse{}
-		if err := rawPrices.Unmarshal(req.Txs[0]); err != nil {
+		if err := rawPrices.Unmarshal(pricesBz); err != nil {
 			h.logger.Error(
 				"failed to unmarshal prices from txs",
 				"height", ctx.BlockHeight(),

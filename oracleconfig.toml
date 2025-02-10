@@ -1,0 +1,6 @@
+client_timeout = "3s"
+enabled = true
+interval = "1.5s"
+metrics_enabled = false
+oracle_address = "localhost:8080"
+price_ttl = "10s"

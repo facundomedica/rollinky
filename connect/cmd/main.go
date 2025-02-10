@@ -456,38 +456,40 @@ func runOracle() error {
 	}
 
 	// start server (blocks).
-	if err := srv.StartServer(ctx, cfg.Host, cfg.Port, grpc.UnaryInterceptor(UnaryInterceptor)); err != nil {
+	if err := srv.StartServer(ctx, cfg.Host, cfg.Port, grpc.UnaryInterceptor(UnaryInterceptor(logger))); err != nil {
 		logger.Error("stopping server", zap.Error(err))
 	}
 	return nil
 }
 
-func UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	// Call handler to get response/error
-	resp, err := handler(ctx, req)
-	if err != nil {
+func UnaryInterceptor(logger *zap.Logger) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		resp, err := handler(ctx, req)
+		if err != nil {
+			return resp, err
+		}
+
+		protoresp := resp.(protov1.Message)
+		bz, err := protov1.Marshal(protoresp)
+		if err != nil {
+			return nil, err
+		}
+
+		since := time.Now()
+		hash := sha256.Sum256(bz)
+		// TODO: if this endpoint is queried a lot (if it's being used for something
+		// else other than creating blocks), we should cache the report.
+		report, err := enclave.GetRemoteReport(hash[:])
+		if err != nil {
+			fmt.Println(err)
+		}
+		trailer := metadata.Pairs(
+			"X-Enclave-Report", base64.RawStdEncoding.EncodeToString(report),
+		)
+		grpc.SetTrailer(ctx, trailer)
+		logger.Debug("created report", zap.Duration("time", time.Since(since)))
 		return resp, err
 	}
-
-	protoresp := resp.(protov1.Message)
-	bz, err := protov1.Marshal(protoresp)
-	if err != nil {
-		return nil, err
-	}
-
-	since := time.Now()
-	hash := sha256.Sum256(bz)
-	report, err := enclave.GetRemoteReport(hash[:])
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("time elapsed:", time.Since(since), len(bz), len(report))
-	trailer := metadata.Pairs(
-		"X-Enclave-Report", base64.RawStdEncoding.EncodeToString(report),
-	)
-	grpc.SetTrailer(ctx, trailer)
-
-	return resp, err
 }
 
 func overwriteMarketMapEndpoint(cfg config.OracleConfig, overwrite string) (config.OracleConfig, error) {

@@ -56,6 +56,49 @@ The sidecar is meant to be ran on an Intel SGX machine in an TEE, it uses a gRPC
 
 This is a library, which contains modified code from Skip's oracle client, in order to make it possible to receive gRPC trailers that the sidecar populates with the verifiable report.
 
+## Running it all together
+
+First we need to start the DA:
+
+```bash
+curl -sSL https://rollkit.dev/install-local-da.sh | bash -s v0.3.1
+```
+
+Then the sequencer:
+
+```bash 
+cd ./sequencer
+make build
+./build/sequencer -rollup-id rollinky -da_address http://0.0.0.0:7980
+```
+
+Now we start the sidecar which will throw some warnings until we start the chain, because the marketmap is missing. This needs to be built and run with Ego on an Intel SGX machine.
+
+```bash
+cd ./connect
+make all # build and sign
+ego run ./build/connect
+```
+
+If we are running locally, we need to get the signerid of the sidecar:
+    
+```bash
+ego signerid ./connect/public.pem
+```
+
+Now we can start the chain, making sure the endpoints are correct:
+
+(TODO: add genesis example and passing in the signer id)
+
+```bash
+rollkit start --rollkit.sequencer_rollup_id rollinky --rollkit.da_address http://localhost:7980 --rollkit.sequencer_address 0.0.0.0:50051  --rollkit.aggregator --rollkit.lazy_block_time=1m0s --rollkit.lazy_aggregator true
+```
+
+After all of this is running we can get some prices from the oracle:
+
+```bash
+./rollinkyd q oracle price USDT USD
+```
 
 ## Learn more
 

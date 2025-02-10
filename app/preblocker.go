@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
@@ -16,6 +17,8 @@ import (
 	connecttypes "github.com/skip-mev/connect/v2/pkg/types"
 	servicemetrics "github.com/skip-mev/connect/v2/service/metrics"
 	oracletypes "github.com/skip-mev/connect/v2/x/oracle/types"
+
+	sequencerutils "github.com/facundomedica/rollinky/sequencer/utils"
 )
 
 type RollkitHandler struct {
@@ -26,7 +29,12 @@ type RollkitHandler struct {
 	ok connectabcitypes.OracleKeeper
 }
 
-func (h *RollkitHandler) PreBlocker(mm *module.Manager) sdk.PreBlocker {
+func (h *RollkitHandler) PreBlocker(mm *module.Manager, signerID string) sdk.PreBlocker {
+	signerIDBz, err := hex.DecodeString(signerID)
+	if err != nil {
+		panic(err)
+	}
+
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (_ *sdk.ResponsePreBlock, err error) {
 		if req == nil {
 			ctx.Logger().Error(
@@ -76,6 +84,26 @@ func (h *RollkitHandler) PreBlocker(mm *module.Manager) sdk.PreBlocker {
 				"height", ctx.BlockHeight(),
 			)
 			return response, nil
+		}
+
+		// return utils.Encode(pricesBz, enclaveReport), nil
+		pricesBz, enclaveReport, err := sequencerutils.Decode(req.Txs[0])
+		if err != nil {
+			h.logger.Error(
+				"failed to decode prices and enclave report",
+				"height", ctx.BlockHeight(),
+				"error", err,
+			)
+			return response, err
+		}
+
+		if err := sequencerutils.VerifyReport(pricesBz, enclaveReport, signerIDBz); err != nil {
+			h.logger.Error(
+				"failed to verify report",
+				"height", ctx.BlockHeight(),
+				"error", err,
+			)
+			return response, err
 		}
 
 		rawPrices := &types.QueryPricesResponse{}

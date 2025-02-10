@@ -48,6 +48,7 @@ func initRootCmd(
 		newApp, appExport,
 		server.StartCmdOptions{
 			AddFlags: func(cmd *cobra.Command) {
+				cmd.Flags().String("signer-id", "", "Intel SGX signer ID")
 				rollconf.AddFlags(cmd)
 				addModuleInitFlags(cmd)
 			},

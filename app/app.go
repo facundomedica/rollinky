@@ -334,7 +334,11 @@ func New(
 		ok:      app.OracleKeeper,
 	}
 
-	app.App.SetPreBlocker(rh.PreBlocker(app.ModuleManager))
+	signerId := appOpts.Get("signer-id").(string)
+	if signerId == "" {
+		panic("signer-id is required")
+	}
+	app.App.SetPreBlocker(rh.PreBlocker(app.ModuleManager, signerId))
 
 	app.App.SetPrepareProposal(baseapp.NoOpPrepareProposal())
 

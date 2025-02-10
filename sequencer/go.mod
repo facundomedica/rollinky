@@ -4,6 +4,7 @@ go 1.23.3
 
 require (
 	cosmossdk.io/log v1.5.0
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c
 	github.com/edgelesssys/ego v1.7.0
 	github.com/facundomedica/connect-client v0.0.0-20250203150411-ee3d53742b42
 	github.com/prometheus/client_golang v1.20.5

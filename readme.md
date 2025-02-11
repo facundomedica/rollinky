@@ -1,46 +1,5 @@
 # rollinky
-**rollinky** is a blockchain built using Cosmos SDK and Tendermint and created with [Ignite CLI](https://ignite.com/cli).
-
-## Get started
-
-```
-ignite chain serve
-```
-
-`serve` command installs dependencies, builds, initializes, and starts your blockchain in development.
-
-### Configure
-
-Your blockchain in development can be configured with `config.yml`. To learn more, see the [Ignite CLI docs](https://docs.ignite.com).
-
-### Web Frontend
-
-Additionally, Ignite CLI offers both Vue and React options for frontend scaffolding:
-
-For a Vue frontend, use: `ignite scaffold vue`
-For a React frontend, use: `ignite scaffold react`
-These commands can be run within your scaffolded blockchain project. 
-
-
-For more information see the [monorepo for Ignite front-end development](https://github.com/ignite/web).
-
-## Release
-To release a new version of your blockchain, create and push a new tag with `v` prefix. A new draft release with the configured targets will be created.
-
-```
-git tag v0.1
-git push origin v0.1
-```
-
-After a draft release is created, make your final changes from the release page and publish it.
-
-### Install
-To install the latest version of your blockchain node's binary, execute the following command on your machine:
-
-```
-curl https://get.ignite.com/username/rollinky@latest! | sudo bash
-```
-`username/rollinky` should match the `username` and `repo_name` of the Github repository to which the source code was pushed. Learn more about [the install process](https://github.com/allinbits/starport-installer).
+**rollinky** is a blockchain built using Cosmos SDK and Rollkit and created with [Ignite CLI](https://ignite.com/cli).
 
 ## Sequencer
 
@@ -58,43 +17,144 @@ This is a library, which contains modified code from Skip's oracle client, in or
 
 ## Running it all together
 
-First we need to start the DA:
+### Prerequisites
+
+This has been tested on Linux. MacOS is not supported, and Windows hasn't been tested.
+
+Install:
+
+- Golang
+- Make (sudo apt-get install build-essential)
+- Rollkit
+- Ego (https://github.com/edgelesssys/ego)
+
+
+#### Configure Intel SGX (If this step is skipped, you might get "OE_QUOTE_PROVIDER_LOAD_ERROR"):
+
+```bash
+sudo apt install libsgx-dcap-default-qpl
+```
+
+Check if this file exists: `/etc/sgx_default_qcnl.conf`; if it doesn't, download the default one:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/intel/SGXDataCenterAttestationPrimitives/master/QuoteGeneration/qcnl/linux/sgx_default_qcnl.conf | sudo tee /etc/sgx_default_qcnl.conf > /dev/null
+```
+
+Finally, add a pccs_url to `/etc/sgx_default_qcnl.conf` (required for attestations to work):
+
+```json
+"pccs_url": "https://global.acccache.azure.net/sgx/certification/v4/"
+```
+
+### Build all the parts
+
+1. Build rollkinkyd (`CGO_CFLAGS=-I/opt/ego/include CGO_LDFLAGS=-L/opt/ego/lib rollkit rebuild` or `CGO_CFLAGS=-I/opt/ego/include CGO_LDFLAGS=-L/opt/ego/lib go build ./cmd/…`)
+
+2. Build the sequencer
+
+```bash 
+cd ./sequencer
+make build
+```
+
+3. Build the sidecar (this is the only part that needs to be built and run on an Intel SGX machine):
+
+```bash
+cd ./connect
+make all # build and sign
+```
+
+This step will create a new key pair and an enclave.json (if it hasn't been previously created). Now modify the enclave.json file to include the CA certificates **and re-build**.
+
+```json
+ "files": [
+    {
+        "source": "/etc/ssl/certs/ca-certificates.crt",
+        "target": "/etc/ssl/certs/ca-certificates.crt"
+    }
+]
+```
+
+### Configure genesis
+
+We currently use ignite to generate the genesis file, but it's not mandatory and can be done manually.
+
+```bash
+ignite chain build && ignite rollkit init
+```
+
+Add some config to the oracle and marketmap modules (optional):
+
+```json
+    "oracle": {
+      "currency_pair_genesis": [
+        {
+          "currency_pair": {
+            "Base": "BTC",
+            "Quote": "USD"
+          },
+          "nonce": 0,
+          "id": 1
+        },
+        {
+          "currency_pair": {
+            "Base": "ETH",
+            "Quote": "USD"
+          },
+          "nonce": 0,
+          "id": 2
+        },
+        {
+          "currency_pair": {
+            "Base": "USDT",
+            "Quote": "USD"
+          },
+          "nonce": 0,
+          "id": 3
+        }
+      ],
+      "next_id": "4"
+    },
+...
+"markets":{"BTC/USD":{"ticker":{"currency_pair":{"Base":"BTC","Quote":"USD"},"decimals":8,"min_provider_count":3,"enabled":true},"provider_configs":[{"name":"coinbase_api","off_chain_ticker":"BTC-USD"},{"name":"coinbase_api","off_chain_ticker":"BTC-USDT","normalize_by_pair":{"Base":"USDT","Quote":"USD"}},{"name":"binance_api","off_chain_ticker":"BTCUSDT","normalize_by_pair":{"Base":"USDT","Quote":"USD"}}]},"ETH/USD":{"ticker":{"currency_pair":{"Base":"ETH","Quote":"USD"},"decimals":11,"min_provider_count":3,"enabled":true},"provider_configs":[{"name":"coinbase_api","off_chain_ticker":"ETH-USD"},{"name":"coinbase_api","off_chain_ticker":"ETH-USDT","normalize_by_pair":{"Base":"USDT","Quote":"USD"}},{"name":"binance_api","off_chain_ticker":"ETHUSDT","normalize_by_pair":{"Base":"USDT","Quote":"USD"}}]},"USDT/USD":{"ticker":{"currency_pair":{"Base":"USDT","Quote":"USD"},"decimals":6,"min_provider_count":2,"enabled":true},"provider_configs":[{"name":"coinbase_api","off_chain_ticker":"USDT-USD"},{"name":"coinbase_api","off_chain_ticker":"USDC-USDT","invert":true},{"name":"binance_api","off_chain_ticker":"USDTUSD"},{"name":"kucoin_ws","off_chain_ticker":"BTC-USDT","normalize_by_pair":{"Base":"BTC","Quote":"USD"},"invert":true}]}}
+```
+
+
+### Run it all together
+
+Start the DA:
 
 ```bash
 curl -sSL https://rollkit.dev/install-local-da.sh | bash -s v0.3.1
 ```
 
-Then the sequencer:
+Get the signer id, necessary to run the sequencer and the node:
+
+```bash
+ego signerid ./connect/public.pem
+```
+
+Then the sequencer (pass the signer id as a flag), which requires a toml config file (see oracleconfig.toml for an example):
 
 ```bash 
-cd ./sequencer
-make build
-./build/sequencer -rollup-id rollinky -da_address http://0.0.0.0:7980
+./sequencer/build/sequencer -rollup-id rollinky -da_address http://0.0.0.0:7980 -signer-id 102e485ef291ba28712e3fde8beccfb667e6e55734433119303d9653aa6db661 -config ./oracleconfig.toml
 ```
 
 Now we start the sidecar which will throw some warnings until we start the chain, because the marketmap is missing. This needs to be built and run with Ego on an Intel SGX machine.
 
 ```bash
-cd ./connect
-make all # build and sign
 ego run ./build/connect
 ```
 
-If we are running locally, we need to get the signerid of the sidecar:
-    
-```bash
-ego signerid ./connect/public.pem
-```
-
-Now we can start the chain, making sure the endpoints are correct:
-
-(TODO: add genesis example and passing in the signer id)
+Finally we start our Cosmos SDK app, again passing the signer-id:
 
 ```bash
-rollkit start --rollkit.sequencer_rollup_id rollinky --rollkit.da_address http://localhost:7980 --rollkit.sequencer_address 0.0.0.0:50051  --rollkit.aggregator --rollkit.lazy_block_time=1m0s --rollkit.lazy_aggregator true
+rollkit start --rollkit.sequencer_rollup_id rollinky --rollkit.da_address http://localhost
+:7980 --rollkit.sequencer_address 0.0.0.0:50051  --rollkit.aggregator --signer-id 102e485ef291ba28712e3fde8beccfb667e6e55734433119303d9653aa6db661
 ```
 
-After all of this is running we can get some prices from the oracle:
+After all of this is running and some blocks have passed we can get some prices from the oracle:
 
 ```bash
 ./rollinkyd q oracle price USDT USD

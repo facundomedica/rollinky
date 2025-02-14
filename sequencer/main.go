@@ -187,16 +187,16 @@ func (o *Oracle) Head(max uint64) ([]byte, error) {
 		}
 
 		fullTrailer := trailer.Get("x-enclave-report")
-		if len(fullTrailer) == 0 {
-			fmt.Println("Trailer is empty")
-			return nil, nil
-		}
+		var enclaveReport []byte
+		if len(fullTrailer) != 0 {
+			report := fullTrailer[0]
 
-		report := fullTrailer[0]
-
-		enclaveReport, err := base64.RawStdEncoding.DecodeString(report)
-		if err != nil {
-			panic(err)
+			enclaveReport, err = base64.RawStdEncoding.DecodeString(report)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			fmt.Println("No trailer found")
 		}
 
 		if err := utils.VerifyReport(enclaveReport, pricesBz, o.signerID); err != nil {

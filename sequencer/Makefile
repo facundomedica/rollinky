@@ -10,8 +10,15 @@ count := 1
 ## build: Build centralized-sequencer binary.
 build:
 	@echo "--> Building centralized-sequencer"
+	@mkdir -p build
 	@CGO_CFLAGS=-I/opt/ego/include CGO_LDFLAGS=-L/opt/ego/lib go build -o build/ ./...
 .PHONY: build
+
+build-no-tee:
+	@echo "--> Building centralized-sequencer without TEE/IntelSGX"
+	@mkdir -p build
+	@go build -tags no_tee -o build/ ./...
+.PHONY: build-no-tee
 
 ## help: Show this help message
 help: Makefile

@@ -10,6 +10,10 @@ build:
 	@mkdir -p build
 	ego-go build -o ./build/connect ./cmd/
 
+build-no-tee:
+	@mkdir -p build
+	go build -tags no_tee -o ./build/connect ./cmd/
+
 # Sign the binary (depends on build).
 sign: build
 	ego sign

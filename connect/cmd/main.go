@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,14 +15,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/edgelesssys/ego/enclave"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
-	protov1 "github.com/golang/protobuf/proto"
 	"github.com/skip-mev/connect/v2/cmd/build"
 	cmdconfig "github.com/skip-mev/connect/v2/cmd/connect/config"
 	"github.com/skip-mev/connect/v2/oracle"
@@ -460,36 +455,6 @@ func runOracle() error {
 		logger.Error("stopping server", zap.Error(err))
 	}
 	return nil
-}
-
-func UnaryInterceptor(logger *zap.Logger) func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		resp, err := handler(ctx, req)
-		if err != nil {
-			return resp, err
-		}
-
-		protoresp := resp.(protov1.Message)
-		bz, err := protov1.Marshal(protoresp)
-		if err != nil {
-			return nil, err
-		}
-
-		since := time.Now()
-		hash := sha256.Sum256(bz)
-		// TODO: if this endpoint is queried a lot (if it's being used for something
-		// else other than creating blocks), we should cache the report.
-		report, err := enclave.GetRemoteReport(hash[:])
-		if err != nil {
-			fmt.Println(err)
-		}
-		trailer := metadata.Pairs(
-			"X-Enclave-Report", base64.RawStdEncoding.EncodeToString(report),
-		)
-		grpc.SetTrailer(ctx, trailer)
-		logger.Debug("created report", zap.Duration("time", time.Since(since)))
-		return resp, err
-	}
 }
 
 func overwriteMarketMapEndpoint(cfg config.OracleConfig, overwrite string) (config.OracleConfig, error) {

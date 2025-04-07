@@ -53,6 +53,8 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	sequencermodulev1 "github.com/rollkit/cosmos-sdk-starter/sdk/api/rollkitsdk/sequencer/module"
+	sequencertypes "github.com/rollkit/cosmos-sdk-starter/sdk/x/sequencer/types"
 	marketmapmodulev1 "github.com/skip-mev/connect/v2/api/connect/marketmap/module/v2"
 	oraclemodulev1 "github.com/skip-mev/connect/v2/api/connect/oracle/module/v2"
 	marketmaptypes "github.com/skip-mev/connect/v2/x/marketmap/types"
@@ -74,6 +76,7 @@ var (
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
 		stakingtypes.ModuleName,
+		sequencertypes.ModuleName,
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
@@ -112,6 +115,7 @@ var (
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
 		stakingtypes.ModuleName,
+		sequencertypes.ModuleName,
 		authz.ModuleName,
 		genutiltypes.ModuleName,
 		// ibc modules
@@ -131,6 +135,7 @@ var (
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
+		sequencertypes.ModuleName,
 		feegrant.ModuleName,
 		group.ModuleName,
 		genutiltypes.ModuleName,
@@ -163,6 +168,7 @@ var (
 		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 		{Account: ibcfeetypes.ModuleName},
 		{Account: icatypes.ModuleName},
+		{Account: sequencertypes.ModuleName},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 
@@ -307,6 +313,10 @@ var (
 				Config: appconfig.WrapAny(&marketmapmodulev1.Module{
 					Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 				}),
+			},
+			{
+				Name:   sequencertypes.ModuleName,
+				Config: appconfig.WrapAny(&sequencermodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

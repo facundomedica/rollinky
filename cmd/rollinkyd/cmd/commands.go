@@ -25,8 +25,7 @@ import (
 
 	"rollinky/app"
 
-	rollserv "github.com/rollkit/cosmos-sdk-starter/server"
-	rollconf "github.com/rollkit/rollkit/config"
+	abciserver "github.com/rollkit/go-execution-abci/server"
 )
 
 func initRootCmd(
@@ -49,10 +48,10 @@ func initRootCmd(
 		server.StartCmdOptions{
 			AddFlags: func(cmd *cobra.Command) {
 				cmd.Flags().String("signer-id", "", "Intel SGX signer ID")
-				rollconf.AddFlags(cmd)
+				abciserver.AddFlags(cmd)
 				addModuleInitFlags(cmd)
 			},
-			StartCommandHandler: rollserv.StartHandler[servertypes.Application],
+			StartCommandHandler: abciserver.StartHandler[servertypes.Application](rootCmd),
 		})
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands

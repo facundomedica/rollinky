@@ -36,6 +36,7 @@ func (h *RollkitHandler) PreBlocker(mm *module.Manager, signerID string) sdk.Pre
 	}
 
 	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (_ *sdk.ResponsePreBlock, err error) {
+		return &sdk.ResponsePreBlock{}, nil
 		if req == nil {
 			ctx.Logger().Error(
 				"received nil RequestFinalizeBlock in oracle preblocker",

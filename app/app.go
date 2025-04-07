@@ -63,8 +63,6 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	_ "github.com/cosmos/cosmos-sdk/x/slashing" // import for side-effects
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
-	_ "github.com/cosmos/cosmos-sdk/x/staking" // import for side-effects
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	_ "github.com/cosmos/ibc-go/modules/capability" // import for side-effects
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	_ "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts" // import for side-effects
@@ -74,6 +72,10 @@ import (
 	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	_ "github.com/rollkit/cosmos-sdk-starter/sdk/x/sequencer" // import for side-effects
+	sequencerkeeper "github.com/rollkit/cosmos-sdk-starter/sdk/x/sequencer/keeper"
+	_ "github.com/rollkit/cosmos-sdk-starter/sdk/x/staking" // import for side-effects
+	stakingkeeper "github.com/rollkit/cosmos-sdk-starter/sdk/x/staking/keeper"
 
 	"github.com/skip-mev/connect/v2/service/metrics"
 	_ "github.com/skip-mev/connect/v2/x/marketmap"
@@ -117,6 +119,7 @@ type App struct {
 	StakingKeeper         *stakingkeeper.Keeper
 	DistrKeeper           distrkeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
+	SequencerKeeper       sequencerkeeper.Keeper
 
 	SlashingKeeper       slashingkeeper.Keeper
 	MintKeeper           mintkeeper.Keeper
@@ -275,6 +278,7 @@ func New(
 		&app.StakingKeeper,
 		&app.DistrKeeper,
 		&app.ConsensusParamsKeeper,
+		&app.SequencerKeeper,
 		&app.SlashingKeeper,
 		&app.MintKeeper,
 		&app.GovKeeper,

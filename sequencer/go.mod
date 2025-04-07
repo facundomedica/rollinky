@@ -143,7 +143,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/rollkit/go-da v0.9.0 // indirect
-	github.com/rollkit/rollkit v0.14.0 // indirect
+	github.com/rollkit/rollkit v0.14.1 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
@@ -191,4 +191,6 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/rollkit/centralized-sequencer => github.com/facundomedica/centralized-sequencer v0.0.0-20250205114939-e32958054e56
+replace github.com/rollkit/centralized-sequencer => ../../facu-seq
+
+replace github.com/rollkit/go-da => github.com/rollkit/go-da v0.7.0

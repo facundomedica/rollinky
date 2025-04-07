@@ -171,7 +171,6 @@ var _ sequencing.BatchExtender = (*Oracle)(nil)
 // Head implements sequencing.BatchExtender.
 func (o *Oracle) Head(max uint64) ([]byte, error) {
 	if cc, ok := o.oracleClient.(oracleclient.WithTrailer); ok {
-		start := time.Now()
 		ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
 		prices, trailer, err := cc.PricesWithTrailer(ctx, &oracletypes.QueryPricesRequest{})
 
@@ -195,15 +194,16 @@ func (o *Oracle) Head(max uint64) ([]byte, error) {
 			if err != nil {
 				panic(err)
 			}
-		} else {
-			fmt.Println("No trailer found")
 		}
+		// else {
+		// 	// fmt.Println("No trailer found")
+		// }
 
 		if err := utils.VerifyReport(enclaveReport, pricesBz, o.signerID); err != nil {
 			panic(err)
 		}
 
-		fmt.Println("Verified prices!: ", prices.Prices, "That took: ", time.Since(start))
+		// fmt.Println("Verified prices!: ", prices.Prices, "That took: ", time.Since(start))
 
 		return utils.Encode(pricesBz, enclaveReport), nil
 	} else {

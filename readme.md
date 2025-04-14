@@ -80,6 +80,76 @@ This step will create a new key pair and an enclave.json (if it hasn't been prev
 
 We currently use ignite to generate the genesis file, but it's not mandatory and can be done manually.
 
+#### Manual genesis file creation
+
+Here's how to create the genesis.json file manually with a Rollkit sequencer:
+
+1. Initialize a basic Cosmos SDK chain with the appd binary:
+   ```
+   appd init <moniker> --chain-id facundo1
+   ```
+
+2. Add an account to your keyring:
+   ```
+   appd keys add <key-name> --keyring-backend test
+   ```
+
+3. Add the account as a genesis account:
+   ```
+   appd add-genesis-account <address> 100000000000stake
+   ```
+
+4. Generate the ED25519 key pair for your Rollkit sequencer:
+   ```
+   openssl genpkey -algorithm ed25519 -out sequencer_key.pem
+   openssl pkey -in sequencer_key.pem -pubout > sequencer_pubkey.pem
+   ```
+
+5. Get the address from the public key:
+   ```
+   # Extract the raw public key in base64 format
+   PUB_KEY=$(openssl pkey -pubin -in sequencer_pubkey.pem -outform DER | dd bs=1 skip=12 2>/dev/null | base64)
+   
+   # Get the address and hex encoded public key using the debug command
+   rollinkyd debug pubkey "{\"@type\":\"/cosmos.crypto.ed25519.PubKey\",\"key\":\"$PUB_KEY\"}"
+   ```
+
+6. Manually edit your genesis.json to add the Rollkit sequencer to both required sections:
+   - Add to `sequencer.sequencers`:
+     ```json
+     "sequencer": {
+       "sequencers": [
+         {
+           "name": "Rollkit Sequencer",
+           "consensus_pubkey": {
+             "@type": "/cosmos.crypto.ed25519.PubKey",
+             "key": "71Kio4G0911gz/sV4FKFnLugLlzi7sOEsh7tUlCdz4c="
+           }
+         }
+       ]
+     }
+     ```
+
+   - Add to `consensus.validators`:
+     ```json
+     "consensus": {
+       "validators": [
+         {
+           "address": "DAC3DF2F1DA675A98FE28BBB7545A28DE9896C6F",
+           "pub_key": {
+             "type": "tendermint/PubKeyEd25519",
+             "value": "71Kio4G0911gz/sV4FKFnLugLlzi7sOEsh7tUlCdz4c="
+           },
+           "power": "1",
+           "name": "Rollkit Sequencer"
+         }
+       ]
+     }
+     ```
+
+
+#### Using ignite
+
 ```bash
 ignite chain build && ignite rollkit init
 ```

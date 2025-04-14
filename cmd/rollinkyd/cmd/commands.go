@@ -51,7 +51,7 @@ func initRootCmd(
 				abciserver.AddFlags(cmd)
 				addModuleInitFlags(cmd)
 			},
-			StartCommandHandler: abciserver.StartHandler[servertypes.Application](rootCmd),
+			StartCommandHandler: abciserver.StartHandler(rootCmd),
 		})
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
